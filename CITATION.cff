@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use these materials, please cite the paper."
+title: "How You Ask Changes How AI Cites: replication materials"
+authors:
+  - family-names: Gjorgjevska
+    given-names: Emilija
+    affiliation: Technical University of Munich
+  - family-names: Ehrlinspiel
+    given-names: Jan
+    affiliation: Peec AI
+  - family-names: Landwehr
+    given-names: Malte
+    affiliation: Peec AI
+date-released: 2026-10-14
+license:
+  - MIT
+  - CC-BY-4.0
+preferred-citation:
+  type: conference-paper
+  title: "How You Ask Changes How AI Cites: An Empirical Study of Shopping Search"
+  authors:
+    - family-names: Gjorgjevska
+      given-names: Emilija
+    - family-names: Ehrlinspiel
+      given-names: Jan
+    - family-names: Landwehr
+      given-names: Malte
+  year: 2027
