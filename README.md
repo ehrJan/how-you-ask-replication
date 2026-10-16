@@ -14,6 +14,7 @@ The study is a matched-scenario factorial experiment. It uses 25 shopping scenar
 | `data/chats_universe.parquet` | One row per submitted prompt run: response id, prompt id, engine (`model_id`; `sonar` = Perplexity API), collection provider (`P1`–`P8`), date, status |
 | `data/sources.parquet` | One row per source record: response id, prompt id, engine, date, normalized URL, domain, source type (`domain_classification`), and `metric_citation_count` (0 = retrieved but not cited) |
 | `data/jev_labels_domains.parquet` | The frozen source-type label of every domain in `sources.parquet` (TypeSafe JEV, `jev-latest`), with the classifier's confidence |
+| `data/jev_human_labels.csv` | Human validation of the source-type labels: 150 domains and 150 URLs with the Peec label, the JEV label and the label of one author who saw neither (Section 3.3) |
 | `data/chats_structure.parquet` | Answer length (`message_length`, characters) and answer element types per response (Gemini change, Section 5.5) |
 | `data/chatgpt_model_by_chat.parquet` | The model version that ChatGPT reported per response (Section 3.2) |
 | `code/` | Estimation and figure code; `run_all.sh` runs it in order |
@@ -51,6 +52,7 @@ All outputs are written to `code/out/`. Every model is estimated on the analysis
 | Section 5.1 bootstrap interval | `fmnl_run.py --labels jev --outcome citation --boot 999 --boot-keep-unidentified --out out/fmnl/jev_citation_boot` | `out/fmnl/jev_citation_boot/ame_boot.csv` |
 | Section 5.2 (no-citation as seventh category) | `fmnl_run.py --labels jev --outcome citation_mass` | `out/fmnl/jev_citation_mass/ame.csv` |
 | Section 5.2, Table 8 (Lee bounds) | `selection_bounds.py --labels jev` | `out/revised/lee_bounds.csv` |
+| Section 3.3 (JEV and Peec labels vs. human labels) | `jev_human_validation.py` | `out/revised/jev_human_validation.csv` |
 | Section 5.3 (variance decomposition) | `wording_variance.py --labels jev` | `out/revised/wording_variance.csv` |
 | Section 5.3 (natural seed vs full template) | `seed_comparison.py --labels jev` | `out/revised/seed_comparison.csv` |
 | Appendix F, Section 5.4 (domain-level stage model, pooled and per engine) | `domain_ppml.py --labels jev --engine <all\|chatgpt-ui\|gemini-ui\|perplexity-ui>` | `out/revised/domain_ppml[_<engine>]_summary.csv` |
@@ -116,6 +118,8 @@ On the first collection day, 26 August 2026, the providers ran every prompt thre
 | `metric_citation_count` | Times the answer cites the source; 0 = retrieved but not cited |
 
 **`jev_labels_domains.parquet`**: `full_domain`; `jev_cls` (source type); `jev_conf` (classifier confidence, 0-1).
+
+**`jev_human_labels.csv`** (300 rows: 150 domains, 150 URLs). The items come from the sources of an earlier panel of 250 shopping prompts, labelled by the same JEV classifier. Within each kind, the sample is stratified by whether Peec and JEV agree (60 drawn) or disagree (90 drawn). `kind` (domain / url); `item_id`; `entity` (domain or URL); `stratum` (agree / disagree); `N_stratum` (entities in the stratum in the panel); `n_stratum` (entities drawn); `weight` (= `N_stratum`/`n_stratum`); `n_rows` (source rows of the entity in the panel); `peec_label`, `jev_label` (classifier labels); `human_label` (label of one author who saw neither classifier output, using the classifiers' category definitions); `human_uncertain` (labeller flagged the call as uncertain); `unreachable` (page no longer loads, human label set to OTHER; excluded from the primary estimate); `human_note` (labeller's free-text note).
 
 **`chats_structure.parquet`**: `chat_id`, `date`, `model_id`, `provider_id`; `message_length` (answer length in characters); `element_types` (list of the answer's element types, e.g. table, sources).
 

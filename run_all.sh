@@ -12,6 +12,7 @@ LOG=out/logs; mkdir -p "$LOG"
 step() { local name=$1; shift; echo "$(date +%H:%M:%S) $name"; "$PY" "$@" > "$LOG/$name.log" 2>&1 || { echo "FAILED: $name (see code/$LOG/$name.log)"; exit 1; }; }
 
 step revised       revised_analysis.py --channel ui              # exclusion audit (Section 3.2)
+step human_labels  jev_human_validation.py                       # Section 3.3 label accuracy vs. human labels
 for oc in citation retrieval citation_mass source_mass; do
   step fmnl_$oc    fmnl_run.py --labels jev --outcome $oc         # Table 3, Figure 3, Section 5.2
   step poisson_$oc fmnl_poisson.py --labels jev --outcome $oc     # second implementation (Table 6)
