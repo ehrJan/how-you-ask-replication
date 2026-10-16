@@ -22,6 +22,10 @@ step stage         fmnl_stage.py --labels jev                     # Section 5.4
 step stability     fmnl_stability.py --labels jev                 # Section 5.5
 step descriptives  descriptives.py --labels jev                   # Tables 2 and 4, Perplexity API
 step wording_var   wording_variance.py --labels jev               # Section 5.3 variance decomposition
+step seed          seed_comparison.py --labels jev                # Section 5.3 seed vs full template
+for e in all chatgpt-ui gemini-ui perplexity-ui; do
+  step ppml_$e    domain_ppml.py --labels jev --engine $e        # Appendix F, Section 5.4 (domain-level stage model)
+done
 step lee_bounds    selection_bounds.py --labels jev               # Section 5.2, Table 8
 step gemini        gemini_structure.py                            # Section 5.5 (answer structure)
 step regime        model_regime.py                                # Section 3.2 model share, Section 5.5 Gemini break + Perplexity API

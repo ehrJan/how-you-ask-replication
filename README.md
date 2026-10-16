@@ -52,6 +52,8 @@ All outputs are written to `code/out/`. Every model is estimated on the analysis
 | Section 5.2 (no-citation as seventh category) | `fmnl_run.py --labels jev --outcome citation_mass` | `out/fmnl/jev_citation_mass/ame.csv` |
 | Section 5.2, Table 8 (Lee bounds) | `selection_bounds.py --labels jev` | `out/revised/lee_bounds.csv` |
 | Section 5.3 (variance decomposition) | `wording_variance.py --labels jev` | `out/revised/wording_variance.csv` |
+| Section 5.3 (natural seed vs full template) | `seed_comparison.py --labels jev` | `out/revised/seed_comparison.csv` |
+| Appendix F, Section 5.4 (domain-level stage model, pooled and per engine) | `domain_ppml.py --labels jev --engine <all\|chatgpt-ui\|gemini-ui\|perplexity-ui>` | `out/revised/domain_ppml[_<engine>]_summary.csv` |
 | Section 5.3, Figure 4 (scenario effects, meta-regression) | `fmnl_hetero.py --labels jev` | `out/fmnl/rq2/jev_stage1.csv`, `jev_stage2.csv` |
 | Section 5.4 (retrieval vs citation) | `fmnl_stage.py --labels jev` | `out/fmnl/rq3/jev_ame.csv` |
 | Section 5.5 (stability) | `fmnl_stability.py --labels jev` | `out/fmnl/rq4/` |
@@ -129,7 +131,6 @@ Cite the paper (machine-readable metadata in `CITATION.cff`):
 
 - **Collection.** Prompts were submitted through the infrastructure of Peec AI. The collection code depends on that platform and is not part of this repository.
 - **Labelling.** Domains were labelled once through the TypeSafe API. The question and the criteria passed to the classifier are given verbatim in the paper (Appendix D). The labels are frozen in `data/jev_labels_domains.parquet`.
-- **Domain-level count model (Appendix F).** It is a supplementary check that the main text does not use. It is not part of this pipeline.
 - **Second label set.** Table 6 in the paper also covers fits with the platform's own source labels, which are not released. The code here reproduces the JEV half of that comparison.
 
 ## License
