@@ -1,7 +1,13 @@
 """Exploratory Lee sensitivity bounds on balanced original factorial prompts.
 
 Bounds target the always-selected principal stratum under individual-level
-monotonicity of selection. The observed sign of the selection-rate difference
+monotonicity of selection. Primary bounds (`lee_strat_*`) are computed within each
+scenario, with the direction of selection observed in that scenario (monotonicity is
+assumed within scenario only), and averaged with equal scenario weights - the
+weighting of the FMNL estimand (`equal_scenario_engine`). The pooled bounds
+(`lee_lower`/`lee_upper`) trim the distribution pooled over scenarios and global
+direction; they bound the pooled raw difference (`naive_diff`), not the
+scenario-weighted estimand, and are kept for comparison. The observed sign of the selection-rate difference
 does not prove monotonicity. Report these as assumption-dependent sensitivity
 analyses, never as a correction for all selection bias. Recompute bounds across
 scenario bootstrap draws and provide an outer percentile uncertainty interval.
@@ -92,6 +98,24 @@ def one_bounds(d, column, factor, scenarios, bootstrap_counts):
         identification="requires_individual_monotonicity_not_verified")
 
 
+def stratified_bounds(d, column, factor, scenarios, bootstrap_counts):
+    """Lee bounds per scenario (scenario's own selection direction), averaged with equal
+    scenario weights; the bootstrap reweights scenarios by their multinomial counts."""
+    y = np.sort(d[column].dropna().unique())
+    per = []
+    for sc in scenarios:
+        g = d[d.scenario == sc]
+        h = [g.loc[g[factor] == arm, column].dropna().value_counts().reindex(y, fill_value=0).to_numpy(float)
+             for arm in (0, 1)]
+        n = [float((g[factor] == arm).sum()) for arm in (0, 1)]
+        lo, hi, _, _ = bounds_from_hist(y, h[0], h[1], n[0], n[1])
+        per.append((h[1] @ y / h[1].sum() - h[0] @ y / h[0].sum(), lo.item(), hi.item()))
+    naive, lo, hi = np.array(per).T
+    w = bootstrap_counts / len(scenarios)
+    return dict(naive_diff_strat=naive.mean(), lee_strat_lower=lo.mean(), lee_strat_upper=hi.mean(),
+                strat_ci_low=np.quantile(w @ lo, .025), strat_ci_high=np.quantile(w @ hi, .975))
+
+
 def selection_sign_check(d, factor, selected="any_citation"):
     """Direction of the factor's effect on P(selected): pooled (the direction the bounds
     assume), scenario-mean with t(G-1) p, and per-scenario agreement. Agreement is
@@ -105,11 +129,14 @@ def selection_sign_check(d, factor, selected="any_citation"):
     same, opposite = agree > 0, agree < 0
     with np.errstate(invalid="ignore", divide="ignore"):  # no selection variation at all
         t = diff.mean() / (diff.std(ddof=1) / np.sqrt(len(diff)))
+        v = m1 * (1 - m1) / n1 + m0 * (1 - m0) / n0  # Cochran Q: do selection effects differ by scenario?
+        q = (((diff - (diff / v).sum() / (1 / v).sum()) ** 2) / v).sum()
     sig = z.abs() > stats.norm.ppf(.975)
     return dict(selection_diff_pp=100 * pooled, selection_diff_scenario_mean_pp=100 * diff.mean(),
                 selection_diff_p_t=2 * stats.t.sf(abs(t), len(diff) - 1),
                 n_scen_same_sign=int(same.sum()), n_scen_opposite_sign=int(opposite.sum()),
-                n_scen_same_sig05=int((same & sig).sum()), n_scen_opposite_sig05=int((opposite & sig).sum()))
+                n_scen_same_sig05=int((same & sig).sum()), n_scen_opposite_sig05=int((opposite & sig).sum()),
+                selection_heterogeneity_p=stats.chi2.sf(q, len(diff) - 1))
 
 
 def main():
@@ -132,16 +159,18 @@ def main():
                 check = selection_sign_check(frame, factor, selected)
                 for k in TESTED:
                     rows.append(dict(labels=args.labels, engine=eng, metric=metric, type=k, factor=factor,
-                        **one_bounds(frame, f"{metric}_{k}", factor, scenarios, counts), **check))
+                        **one_bounds(frame, f"{metric}_{k}", factor, scenarios, counts),
+                        **stratified_bounds(frame, f"{metric}_{k}", factor, scenarios, counts), **check))
     res = pd.DataFrame(rows)
-    pp = ["naive_diff", "lee_lower", "lee_upper", "outer_ci_low", "outer_ci_high"]
+    pp = ["naive_diff", "lee_lower", "lee_upper", "outer_ci_low", "outer_ci_high",
+          "naive_diff_strat", "lee_strat_lower", "lee_strat_upper", "strat_ci_low", "strat_ci_high"]
     res[pp] *= 100
     res = res.rename(columns={c: f"{c}_pp" for c in pp})
     OUT.mkdir(parents=True, exist_ok=True)
     upsert(res, OUT / "lee_bounds.csv")
     print(res.query("metric == 'citation_share' and engine != 'chatgpt-ui'")
-          [["engine", "type", "factor", "selection_diff_pp", "n_scen_same_sig05", "n_scen_opposite_sig05", "naive_diff_pp",
-            "lee_lower_pp", "lee_upper_pp", "outer_ci_low_pp", "outer_ci_high_pp"]].round(2).to_string(index=False))
+          [["engine", "type", "factor", "selection_diff_pp", "selection_heterogeneity_p", "n_scen_opposite_sig05",
+            "naive_diff_strat_pp", "lee_strat_lower_pp", "lee_strat_upper_pp", "strat_ci_low_pp", "strat_ci_high_pp"]].round(2).to_string(index=False))
 
 
 if __name__ == "__main__":
